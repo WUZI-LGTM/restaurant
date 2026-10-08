@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>客家菜馆 · 后台管理</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+body{background:#f0f2f5;color:#333;min-height:100vh}
+.header{background:linear-gradient(135deg,#c84032,#a63020);color:#fff;padding:14px 16px}
+.header h1{font-size:18px;margin-bottom:2px}
+.header .sub{font-size:11px;opacity:.85}
+.stats{display:flex;gap:8px;margin-top:10px}
+.stat-card{flex:1;background:rgba(255,255,255,.15);border-radius:8px;padding:8px;text-align:center}
+.stat-card .num{font-size:18px;font-weight:bold}
+.stat-card .label{font-size:10px;opacity:.9}
+.tabs{display:flex;background:#fff;border-bottom:2px solid #e8e8e8;padding:0 12px}
+.tab{flex:1;padding:11px 0;text-align:center;cursor:pointer;font-size:13px;color:#666;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab.active{color:#c84032;font-weight:bold;border-bottom-color:#c84032}
+.tab-content{display:none;padding:12px}
+.tab-content.active{display:block}
+.filter-bar{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
+.filter-bar button{padding:5px 10px;border:1px solid #ddd;background:#fff;border-radius:5px;cursor:pointer;font-size:12px}
+.filter-bar button.active{background:#c84032;color:#fff;border-color:#c84032}
+.filter-bar .refresh{margin-left:auto;background:#2b74d9;color:#fff;border-color:#2b74d9}
+.order-card{background:#fff;border-radius:10px;padding:12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.05);border-left:4px solid #ccc}
+.order-card.s-待处理{border-left-color:#ff9800}
+.order-card.s-制作中{border-left-color:#2196f3}
+.order-card.s-已完成{border-left-color:#4caf50}
+.order-card.s-已取消{border-left-color:#9e9e9e;opacity:.7}
+.order-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.order-no{font-size:13px;font-weight:bold;color:#c84032}
+.order-time{font-size:10px;color:#999}
+.order-meta{font-size:12px;color:#555;margin-bottom:5px}
+.order-meta span{margin-right:10px}
+.order-goods{background:#fafafa;border-radius:5px;padding:6px 8px;font-size:11px;margin-bottom:5px;max-height:100px;overflow-y:auto}
+.order-goods .gline{display:flex;justify-content:space-between;padding:1px 0}
+.order-total{font-size:14px;font-weight:bold;color:#e63946;text-align:right;margin-bottom:6px}
+.order-remark{font-size:11px;color:#e67e22;background:#fff8e1;padding:4px 6px;border-radius:4px;margin-bottom:6px}
+.order-actions{display:flex;gap:4px;flex-wrap:wrap}
+.order-actions button{flex:1;min-width:50px;padding:5px 0;border:none;border-radius:4px;font-size:11px;cursor:pointer;color:#fff}
+.badge{display:inline-block;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:bold}
+.b-待处理{background:#fff3e0;color:#e65100}
+.b-制作中{background:#e3f2fd;color:#1565c0}
+.b-已完成{background:#e8f5e9;color:#2e7d32}
+.b-已取消{background:#f5f5f5;color:#757575}
+.dish-toolbar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.dish-toolbar button{padding:7px 14px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;color:#fff}
+.btn-add{background:#4caf50}
+.btn-reset{background:#ff9800}
+.dish-section{margin-bottom:14px}
+.dish-section h3{font-size:13px;color:#c84032;margin-bottom:6px;padding-left:6px;border-left:3px solid #c84032}
+.dish-table{width:100%;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);font-size:12px}
+.dish-table th{background:#a65a44;color:#fff;padding:6px 8px;text-align:left;font-size:11px}
+.dish-table td{padding:5px 8px;border-bottom:1px solid #f0f0f0}
+.dish-table input{padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:12px;width:100%}
+.dish-table .p-input{width:55px}
+.dish-table .c-input{width:70px}
+.dish-table .s-input{width:70px}
+.action-btn{padding:3px 7px;border:none;border-radius:4px;cursor:pointer;font-size:11px;color:#fff;margin-right:2px}
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+.mask.show{display:flex}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:340px;padding:18px}
+.modal h3{font-size:16px;margin-bottom:12px;text-align:center;color:#c84032}
+.modal label{font-size:12px;color:#666;display:block;margin:8px 0 3px}
+.modal input,.modal select{width:100%;padding:8px;border:1px solid #ddd;border-radius:5px;font-size:13px;font-family:inherit}
+.modal-btns{display:flex;gap:8px;margin-top:14px}
+.modal-btns button{flex:1;padding:10px;border:none;border-radius:7px;font-size:14px;font-weight:bold;cursor:pointer}
+.btn-cancel{background:#f0f0f0;color:#666}
+.btn-confirm{background:#c84032;color:#fff}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:200;display:none}
+.toast.show{display:block}
+.empty{text-align:center;color:#999;padding:30px;font-size:13px}
+.loading{text-align:center;padding:30px;color:#999;font-size:13px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🍲 客家菜馆 · 后台管理</h1>
+  <div class="sub">订单实时同步 · 菜品云端管理</div>
+  <div class="stats">
+    <div class="stat-card"><div class="num" id="todayCount">0</div><div class="label">今日订单</div></div>
+    <div class="stat-card"><div class="num" id="todayAmount">¥0</div><div class="label">今日营业额</div></div>
+    <div class="stat-card"><div class="num" id="pendingCount">0</div><div class="label">待处理</div></div>
+  </div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('orders',this)">📋 订单管理</div>
+  <div class="tab" onclick="switchTab('dishes',this)">🍽️ 菜品管理</div>
+</div>
+
+<div class="tab-content active" id="tabOrders">
+  <div class="filter-bar">
+    <button class="active" onclick="setFilter(this,'')">全部</button>
+    <button onclick="setFilter(this,'待处理')">待处理</button>
+    <button onclick="setFilter(this,'制作中')">制作中</button>
+    <button onclick="setFilter(this,'已完成')">已完成</button>
+    <button onclick="setFilter(this,'已取消')">已取消</button>
+    <button class="refresh" onclick="loadOrders()">🔄刷新</button>
+  </div>
+  <div id="orderList"><div class="loading">加载中...</div></div>
+</div>
+
+<div class="tab-content" id="tabDishes">
+  <div class="dish-toolbar">
+    <button class="btn-add" onclick="openAddDish()">➕ 新增菜品</button>
+    <button class="btn-reset" onclick="resetDishes()">🔄 恢复默认菜单</button>
+    <span style="font-size:12px;color:#999">改价后点保存，点餐页即时生效</span>
+  </div>
+  <div id="dishManage"><div class="loading">加载中...</div></div>
+</div>
+
+<div class="mask" id="addMask">
+  <div class="modal">
+    <h3>新增菜品</h3>
+    <label>所属分类 *</label>
+    <select id="newCat">
+      <option value="">-- 选择分类 --</option>
+      <option>🥣 汤类</option><option>⭐ 店长推荐</option><option>🍲 客家菜</option>
+      <option>🫕 煲仔菜</option><option>🦞 海鲜</option><option>🥬 素菜</option>
+      <option>🐟 河鲜</option><option>🍣 鱼生</option><option>🍚 主食</option><option>🥤 饮料</option>
+    </select>
+    <label>菜品名称 *</label><input type="text" id="newName" placeholder="例如：客家酿豆腐">
+    <label>价格（元，时价填0）</label><input type="number" id="newPrice" value="0" min="0" step="1">
+    <label>规格/备注（选填）</label><input type="text" id="newSpec" placeholder="小份/大份、小碟、时价、须提前预定">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAddDish()">取消</button>
+      <button class="btn-confirm" onclick="saveNewDish()">确认添加</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentFilter = '', allOrders = [];
+
+function switchTab(tab, btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tabOrders').classList.toggle('active', tab==='orders');
+  document.getElementById('tabDishes').classList.toggle('active', tab==='dishes');
+  if(tab==='dishes') loadDishes();
+  if(tab==='orders') loadOrders();
+}
+
+// ===== 订单 =====
+async function loadOrders(){
+  try{
+    const r = await fetch('/api/orders');
+    const d = await r.json();
+    allOrders = d.ok ? d.data : [];
+    renderStats(); renderOrders();
+  }catch(e){ document.getElementById('orderList').innerHTML = '<div class="empty">加载失败：'+(e.message||'网络错误')+'</div>'; }
+}
+function renderStats(){
+  const today = new Date().toLocaleDateString('zh-CN');
+  const todayOrders = allOrders.filter(o=>o.created_at.startsWith(today));
+  const todayAmount = todayOrders.filter(o=>o.status!=='已取消').reduce((s,o)=>s+o.total,0);
+  const pending = allOrders.filter(o=>o.status==='待处理').length;
+  document.getElementById('todayCount').textContent = todayOrders.length;
+  document.getElementById('todayAmount').textContent = '¥'+todayAmount.toFixed(2);
+  document.getElementById('pendingCount').textContent = pending;
+}
+function renderOrders(){
+  const filtered = currentFilter ? allOrders.filter(o=>o.status===currentFilter) : allOrders;
+  const list = document.getElementById('orderList');
+  if(filtered.length===0){ list.innerHTML='<div class="empty">暂无订单</div>'; return; }
+  list.innerHTML = filtered.map(o=>{
+    const goods = o.goods.map(g=>`<div class="gline"><span>${g.name} ×${g.qty}</span><span>¥${g.subtotal}</span></div>`).join('');
+    return `
+    <div class="order-card s-${o.status}">
+      <div class="order-head"><span class="order-no">${o.order_no}</span><span class="badge b-${o.status}">${o.status}</span></div>
+      <div class="order-time">${o.created_at}</div>
+      <div class="order-meta"><span>🪑 ${o.table_no}</span><span>👥 ${o.people_num||'-'}人</span></div>
+      ${o.remark&&o.remark!=='无'?`<div class="order-remark">📝 ${o.remark}</div>`:''}
+      <div class="order-goods">${goods}</div>
+      <div class="order-total">合计 ¥${parseFloat(o.total).toFixed(2)}</div>
+      <div class="order-actions">
+        ${o.status==='待处理'?`<button style="background:#2196f3" onclick="setStatus(${o.id},'制作中')">开始制作</button>`:''}
+        ${o.status==='制作中'?`<button style="background:#4caf50" onclick="setStatus(${o.id},'已完成')">完成</button>`:''}
+        ${o.status==='待处理'?`<button style="background:#ff9800" onclick="setStatus(${o.id},'已取消')">取消</button>`:''}
+        <button style="background:#f44336" onclick="delOrder(${o.id})">删除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function setFilter(btn, f){
+  document.querySelectorAll('.filter-bar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = f; renderOrders();
+}
+async function setStatus(id, status){
+  if(!confirm('确定改为「'+status+'」？')) return;
+  await fetch('/api/order/'+id+'/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+  showToast('✅ 已更新'); loadOrders();
+}
+async function delOrder(id){
+  if(!confirm('确定删除该订单？')) return;
+  await fetch('/api/order/'+id,{method:'DELETE'});
+  showToast('已删除'); loadOrders();
+}
+
+// ===== 菜品 =====
+async function loadDishes(){
+  try{
+    const r = await fetch('/api/dishes');
+    const d = await r.json();
+    if(!d.ok){ document.getElementById('dishManage').innerHTML='<div class="empty">加载失败</div>'; return; }
+    const box = document.getElementById('dishManage');
+    if(d.data.length===0){ box.innerHTML='<div class="empty">暂无菜品，点「恢复默认菜单」</div>'; return; }
+    box.innerHTML = d.data.map(cat=>`
+      <div class="dish-section">
+        <h3>${cat.category}（${cat.items.length}道）</h3>
+        <table class="dish-table">
+          <thead><tr><th style="width:36%">菜品名</th><th style="width:14%">分类</th><th style="width:12%">价格</th><th style="width:16%">规格</th><th style="width:22%">操作</th></tr></thead>
+          <tbody>
+            ${cat.items.map(it=>`
+              <tr>
+                <td><input type="text" value="${it.name}" id="dn_${it.id}"></td>
+                <td><input type="text" class="c-input" value="${it.category}" id="dc_${it.id}"></td>
+                <td><input type="number" class="p-input" value="${it.price}" min="0" step="1" id="dp_${it.id}"></td>
+                <td><input type="text" class="s-input" value="${it.spec||''}" id="ds_${it.id}" placeholder="选填"></td>
+                <td>
+                  <button class="action-btn" style="background:#2196f3" onclick="saveDish(${it.id})">保存</button>
+                  <button class="action-btn" style="background:#f44336" onclick="delDish(${it.id})">删除</button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`).join('');
+  }catch(e){ document.getElementById('dishManage').innerHTML = '<div class="empty">加载失败：'+(e.message||'网络错误')+'</div>'; }
+}
+async function saveDish(id){
+  const name = document.getElementById('dn_'+id).value.trim();
+  const category = document.getElementById('dc_'+id).value.trim();
+  const price = parseFloat(document.getElementById('dp_'+id).value)||0;
+  const spec = document.getElementById('ds_'+id).value.trim();
+  if(!name||!category){ showToast('菜品名和分类不能为空'); return; }
+  await fetch('/api/dish/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,category,price,spec})});
+  showToast('✅ 已保存'); loadDishes();
+}
+async function delDish(id){
+  if(!confirm('确定删除该菜品？')) return;
+  await fetch('/api/dish/'+id,{method:'DELETE'});
+  showToast('已删除'); loadDishes();
+}
+function openAddDish(){ document.getElementById('addMask').classList.add('show'); }
+function closeAddDish(){
+  document.getElementById('addMask').classList.remove('show');
+  document.getElementById('newName').value=''; document.getElementById('newPrice').value='0'; document.getElementById('newSpec').value='';
+}
+async function saveNewDish(){
+  const category = document.getElementById('newCat').value;
+  const name = document.getElementById('newName').value.trim();
+  const price = parseFloat(document.getElementById('newPrice').value)||0;
+  const spec = document.getElementById('newSpec').value.trim();
+  if(!category||!name){ showToast('请填写分类和菜品名'); return; }
+  await fetch('/api/dish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({category,name,price,spec})});
+  showToast('✅ 添加成功'); closeAddDish(); loadDishes();
+}
+async function resetDishes(){
+  if(!confirm('确定恢复默认菜单？将清空现有菜品并重新写入157道默认菜')) return;
+  const r = await fetch('/api/dishes/reset',{method:'POST'});
+  const d = await r.json();
+  showToast(d.ok ? '✅ 已恢复默认菜单（'+d.count+'道）' : '恢复失败');
+  loadDishes();
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+loadOrders();
+setInterval(()=>{ if(document.getElementById('tabOrders').classList.contains('active')) loadOrders(); }, 15000);
+</script>
+</body>
+</html>

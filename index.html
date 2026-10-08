@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>客家菜馆 · 扫码点餐</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+body{background:#f4f4f4;color:#333;display:flex;height:100vh;overflow:hidden}
+.sidebar{width:85px;background:#fff;overflow-y:auto;border-right:1px solid #eee;flex-shrink:0}
+.sidebar::-webkit-scrollbar{display:none}
+.cat-item{padding:14px 4px;text-align:center;font-size:12px;color:#666;border-left:3px solid transparent;cursor:pointer;line-height:1.3}
+.cat-item.active{background:#faf3ef;color:#c84032;font-weight:bold;border-left-color:#c84032}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+.topbar{background:linear-gradient(135deg,#c84032,#a63020);color:#fff;padding:12px 14px;flex-shrink:0}
+.topbar h1{font-size:17px;margin-bottom:1px}
+.topbar p{font-size:10px;opacity:.85}
+.dish-list{flex:1;overflow-y:auto;padding:8px 10px 90px}
+.cat-title{font-size:14px;font-weight:bold;color:#c84032;margin:12px 0 6px;padding-left:8px;border-left:4px solid #c84032}
+.dish-card{background:#fff;border-radius:10px;padding:10px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.dish-name{font-size:13px;font-weight:600;margin-bottom:3px}
+.dish-price{color:#e63946;font-size:14px;font-weight:bold}
+.dish-price .unit{font-size:10px;color:#999;font-weight:normal;margin-left:3px}
+.add-btn{background:#c84032;color:#fff;border:none;width:28px;height:28px;border-radius:50%;font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;margin-left:6px}
+.tag{display:inline-block;background:#fff3e0;color:#e67e22;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:4px;vertical-align:middle}
+.cart-bar{position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #eee;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 -2px 8px rgba(0,0,0,.08)}
+.cart-icon{position:relative;width:42px;height:42px;background:#c84032;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;cursor:pointer;margin-top:-22px;box-shadow:0 2px 8px rgba(200,64,50,.4)}
+.cart-count{position:absolute;top:-3px;right:-3px;background:#ff9800;color:#fff;font-size:10px;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;font-weight:bold}
+.cart-total{flex:1;margin-left:10px}
+.cart-total .amount{font-size:17px;font-weight:bold;color:#e63946}
+.cart-total .tip{font-size:10px;color:#999}
+.submit-btn{background:#c84032;color:#fff;border:none;padding:9px 20px;border-radius:18px;font-size:14px;font-weight:bold;cursor:pointer}
+.submit-btn:disabled{background:#ccc}
+.cart-panel{position:absolute;bottom:58px;left:0;right:0;background:#fff;border-radius:12px 12px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.15);max-height:55vh;overflow-y:auto;display:none;padding:10px}
+.cart-panel.show{display:block}
+.cart-panel-title{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 8px;border-bottom:1px solid #f0f0f0;margin-bottom:4px;font-size:13px}
+.cart-panel-title span{color:#999;cursor:pointer;font-size:12px}
+.cart-row{display:flex;justify-content:space-between;align-items:center;padding:8px 4px;border-bottom:1px solid #f7f7f7}
+.cart-row .name{font-size:12px;flex:1}
+.cart-row .price{color:#e63946;font-size:12px;margin:0 6px}
+.qty-box{display:flex;align-items:center;gap:6px}
+.qty-box button{width:22px;height:22px;border:none;border-radius:50%;cursor:pointer;font-size:14px;line-height:1}
+.qty-box .minus{background:#f0f0f0;color:#666}
+.qty-box .plus{background:#c84032;color:#fff}
+.qty-box span{min-width:16px;text-align:center;font-size:12px}
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:30;display:none;align-items:center;justify-content:center;padding:16px}
+.mask.show{display:flex}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:340px;max-height:85vh;overflow-y:auto;padding:18px}
+.modal h3{font-size:16px;margin-bottom:12px;text-align:center;color:#c84032}
+.modal label{font-size:12px;color:#666;display:block;margin:8px 0 3px}
+.modal input,.modal textarea{width:100%;padding:8px;border:1px solid #ddd;border-radius:5px;font-size:13px;font-family:inherit}
+.modal textarea{resize:none;height:48px}
+.order-summary{background:#fafafa;border-radius:6px;padding:8px;margin:10px 0;font-size:12px;max-height:120px;overflow-y:auto}
+.order-summary .line{display:flex;justify-content:space-between;padding:2px 0}
+.order-summary .total{border-top:1px dashed #ddd;margin-top:5px;padding-top:6px;font-weight:bold;color:#e63946;font-size:14px}
+.modal-btns{display:flex;gap:8px;margin-top:14px}
+.modal-btns button{flex:1;padding:10px;border:none;border-radius:7px;font-size:14px;font-weight:bold;cursor:pointer}
+.btn-cancel{background:#f0f0f0;color:#666}
+.btn-confirm{background:#c84032;color:#fff}
+.btn-confirm:disabled{background:#ccc}
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.8);color:#fff;padding:14px 22px;border-radius:8px;font-size:14px;z-index:50;display:none;text-align:center;max-width:80%}
+.toast.show{display:block}
+.loading{text-align:center;padding:40px;color:#999;font-size:13px}
+</style>
+</head>
+<body>
+<div class="sidebar" id="sidebar"></div>
+<div class="main">
+  <div class="topbar"><h1>🍲 客家菜馆</h1><p>扫码点餐 · 明码标价 · 时价以当日为准</p></div>
+  <div class="dish-list" id="dishList"><div class="loading">菜单加载中...</div></div>
+  <div class="cart-bar">
+    <div class="cart-icon" onclick="toggleCart()">🛒<span class="cart-count" id="cartCount" style="display:none">0</span></div>
+    <div class="cart-total"><div class="amount">¥<span id="totalAmount">0.00</span></div><div class="tip">茶位费另计</div></div>
+    <button class="submit-btn" id="submitBtn" onclick="openOrder()" disabled>去结算</button>
+  </div>
+  <div class="cart-panel" id="cartPanel">
+    <div class="cart-panel-title"><strong>已选菜品</strong><span onclick="clearCart()">清空</span></div>
+    <div id="cartItems"></div>
+  </div>
+</div>
+
+<div class="mask" id="orderMask">
+  <div class="modal">
+    <h3>确认订单</h3>
+    <label>桌号 *</label><input type="text" id="tableNo" placeholder="例如：1号桌 / 包间A1">
+    <label>用餐人数</label><input type="number" id="peopleNum" placeholder="选填" min="1">
+    <label>口味 / 特殊要求</label><textarea id="remark" placeholder="少辣、不要葱、忌口等"></textarea>
+    <div class="order-summary" id="orderSummary"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeOrder()">取消</button>
+      <button class="btn-confirm" id="confirmBtn" onclick="submitOrder()">提交订单</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let menu = [], cart = {};
+
+async function loadMenu(){
+  try{
+    const r = await fetch('/api/dishes');
+    const d = await r.json();
+    if(d.ok){ menu = d.data; renderMenu(); }
+    else document.getElementById('dishList').innerHTML = '<div class="loading">菜单加载失败</div>';
+  }catch(e){
+    document.getElementById('dishList').innerHTML = '<div class="loading">⚠ 无法连接服务器<br><br>请确认网址正确且服务已启动</div>';
+  }
+}
+
+function renderMenu(){
+  const sidebar = document.getElementById('sidebar'), dishList = document.getElementById('dishList');
+  sidebar.innerHTML = ''; dishList.innerHTML = '';
+  if(menu.length===0){ dishList.innerHTML='<div class="loading">暂无菜品</div>'; return; }
+  menu.forEach((c,i)=>{
+    const d = document.createElement('div');
+    d.className = 'cat-item' + (i===0?' active':'');
+    d.textContent = c.category;
+    d.onclick = ()=>{
+      document.querySelectorAll('.cat-item').forEach(x=>x.classList.remove('active'));
+      d.classList.add('active');
+      document.getElementById('cat_'+i).scrollIntoView({behavior:'smooth',block:'start'});
+    };
+    sidebar.appendChild(d);
+  });
+  menu.forEach((c,i)=>{
+    const title = document.createElement('div');
+    title.className='cat-title'; title.id='cat_'+i; title.textContent=c.category;
+    dishList.appendChild(title);
+    c.items.forEach(item=>{
+      const card = document.createElement('div');
+      card.className='dish-card';
+      const priceText = item.price>0 ? '¥'+item.price : '时价';
+      const tag = (item.spec==='时价')?'时价':((item.spec==='须提前预定')?'预定':'');
+      const specShow = item.spec && item.spec!=='时价' && item.spec!=='须提前预定' ? item.spec : '';
+      card.innerHTML = `
+        <div style="flex:1;min-width:0">
+          <div class="dish-name">${item.name}${tag?`<span class="tag">${tag}</span>`:''}</div>
+          <div class="dish-price">${priceText}${specShow?`<span class="unit">${specShow}</span>`:''}</div>
+        </div>
+        <button class="add-btn" onclick="addItem(${item.id})">+</button>`;
+      dishList.appendChild(card);
+    });
+  });
+  dishList.addEventListener('scroll',()=>{
+    let cur=0;
+    menu.forEach((c,i)=>{ const el=document.getElementById('cat_'+i); if(el&&el.getBoundingClientRect().top<120) cur=i; });
+    document.querySelectorAll('.cat-item').forEach((x,i)=>x.classList.toggle('active',i===cur));
+  });
+  updateCart();
+}
+
+function findItem(id){ for(const c of menu) for(const it of c.items) if(it.id===id) return it; return null; }
+function addItem(id){
+  const item = findItem(id); if(!item) return;
+  if(cart[id]) cart[id].qty++; else cart[id]={item,qty:1};
+  updateCart(); showToast('已加入：'+item.name);
+}
+function changeQty(id,delta){
+  if(!cart[id]) return;
+  cart[id].qty += delta;
+  if(cart[id].qty<=0) delete cart[id];
+  updateCart();
+}
+function clearCart(){
+  if(Object.keys(cart).length===0) return;
+  if(confirm('确定清空购物车？')){cart={};updateCart();document.getElementById('cartPanel').classList.remove('show');}
+}
+function updateCart(){
+  const entries = Object.entries(cart);
+  const count = entries.reduce((s,[,v])=>s+v.qty,0);
+  let total = entries.reduce((s,[,v])=>s+(v.item.price||0)*v.qty,0);
+  document.getElementById('cartCount').style.display = count>0?'flex':'none';
+  document.getElementById('cartCount').textContent = count;
+  document.getElementById('totalAmount').textContent = total.toFixed(2);
+  document.getElementById('submitBtn').disabled = count===0;
+  const box = document.getElementById('cartItems');
+  if(entries.length===0){ box.innerHTML='<div class="loading" style="padding:16px">购物车为空</div>'; return; }
+  box.innerHTML = entries.map(([id,v])=>`
+    <div class="cart-row">
+      <div class="name">${v.item.name}</div>
+      <div class="price">¥${((v.item.price||0)*v.qty).toFixed(2)}</div>
+      <div class="qty-box">
+        <button class="minus" onclick="changeQty(${id},-1)">−</button>
+        <span>${v.qty}</span>
+        <button class="plus" onclick="changeQty(${id},1)">+</button>
+      </div>
+    </div>`).join('');
+}
+function toggleCart(){
+  if(Object.keys(cart).length===0){showToast('购物车为空，请先选菜');return;}
+  document.getElementById('cartPanel').classList.toggle('show');
+}
+function openOrder(){
+  if(Object.keys(cart).length===0) return;
+  const entries = Object.entries(cart);
+  let total=0;
+  const lines = entries.map(([id,v])=>{
+    const sub=(v.item.price||0)*v.qty; total+=sub;
+    return `<div class="line"><span>${v.item.name} ×${v.qty}</span><span>¥${sub.toFixed(2)}</span></div>`;
+  }).join('');
+  document.getElementById('orderSummary').innerHTML = lines + `<div class="total"><span>合计</span><span>¥${total.toFixed(2)}</span></div>`;
+  document.getElementById('orderMask').classList.add('show');
+}
+function closeOrder(){document.getElementById('orderMask').classList.remove('show');}
+
+async function submitOrder(){
+  const table = document.getElementById('tableNo').value.trim();
+  if(!table){showToast('请填写桌号');return;}
+  const people = document.getElementById('peopleNum').value;
+  const remark = document.getElementById('remark').value.trim();
+  const entries = Object.entries(cart);
+  let total=0;
+  const goods = entries.map(([id,v])=>{
+    const sub=(v.item.price||0)*v.qty; total+=sub;
+    return {name:v.item.name,qty:v.qty,price:v.item.price,subtotal:parseFloat(sub.toFixed(2))};
+  });
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true; btn.textContent = '提交中...';
+  try{
+    const resp = await fetch('/api/order',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({tableNo:table, peopleNum:people, remark:remark, goods:goods, total:parseFloat(total.toFixed(2))})
+    });
+    const data = await resp.json();
+    if(data.ok){
+      closeOrder(); cart={}; updateCart();
+      document.getElementById('cartPanel').classList.remove('show');
+      document.getElementById('tableNo').value='';
+      document.getElementById('peopleNum').value='';
+      document.getElementById('remark').value='';
+      showToast('✅ 下单成功！\n订单号：'+data.orderNo+'\n桌号：'+table+'\n合计：¥'+total.toFixed(2));
+    } else showToast('下单失败：'+(data.msg||'未知错误'));
+  }catch(e){ showToast('⚠ 网络错误，请重试'); }
+  finally{ btn.disabled=false; btn.textContent='提交订单'; }
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.innerHTML=msg.replace(/\n/g,'<br>');
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove('show'),3000);
+}
+loadMenu();
+</script>
+</body>
+</html>
